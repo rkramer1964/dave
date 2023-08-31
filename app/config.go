@@ -3,11 +3,12 @@ package app
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"os"
-	"path/filepath"
 )
 
 // Config represents the configuration of the server application.
@@ -42,6 +43,10 @@ type TLS struct {
 type UserInfo struct {
 	Password string
 	Subdir   *string
+	Read     *bool
+	Write    *bool
+	List     *bool
+	Delete   *bool
 }
 
 // Cors contains settings related to Cross-Origin Resource Sharing (CORS)
@@ -160,6 +165,22 @@ func updateConfig(cfg *Config, updatedCfg *Config) {
 				log.WithField("user", username).Info("Updated subdir of user")
 				cfg.Users[username].Subdir = v.Subdir
 			}
+			if !nilBoolEqual(cfg.Users[username].Read, v.Read) {
+				log.WithField("user", username).Info("Updated read permissin of user")
+				cfg.Users[username].Read = v.Read
+			}
+			if !nilBoolEqual(cfg.Users[username].Write, v.Write) {
+				log.WithField("user", username).Info("Updated write permissin of user")
+				cfg.Users[username].Write = v.Write
+			}
+			if !nilBoolEqual(cfg.Users[username].Delete, v.Delete) {
+				log.WithField("user", username).Info("Updated delete permissin of user")
+				cfg.Users[username].Delete = v.Delete
+			}
+			if !nilBoolEqual(cfg.Users[username].List, v.List) {
+				log.WithField("user", username).Info("Updated list permissin of user")
+				cfg.Users[username].List = v.List
+			}
 		}
 	}
 	cfg.ensureUserDirs()
@@ -200,4 +221,16 @@ func (cfg *Config) ensureUserDirs() {
 			}
 		}
 	}
+}
+func nilBoolEqual(b1 *bool, b2 *bool) bool {
+	if b1 == nil && b2 == nil {
+		return true
+	}
+	if b1 != nil && b2 == nil {
+		return false
+	}
+	if b1 == nil && b2 != nil {
+		return false
+	}
+	return *b1 == *b2
 }
